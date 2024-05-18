@@ -9,18 +9,28 @@ from transformers import (
 import json
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
-trained_model_path = 'qag_t5_trained_model'
-trained_tokenizer = 'qag_t5_tokenizer'
+trained_model_path = 'models/qag_t5_trained_model_v7'
+trained_tokenizer = 'models/qag_t5_tokenizer_v7'
 
 model = T5ForConditionalGeneration.from_pretrained(trained_model_path)
 tokenizer = T5Tokenizer.from_pretrained(trained_tokenizer)
 # print(model)
+
+def from_string(formatted_string):
+  parts = formatted_string.split("answer:")
+  try:
+    question = parts[0].replace("question:", "").strip()
+    answer = parts[1].replace("answer:", "").strip()
+  except:
+    answer = ""
+  return question, answer
+
 def get_question(mdl,tknizer,sentence,answers=["[MASK]"],num_of_q=1):
     questions = []
     for answer in answers:
         text = "context: {} answer: {}".format(sentence,answer)
         # print (text)
-        max_len = 256
+        max_len = 512
         encoding = tknizer.encode_plus(text,max_length=max_len, pad_to_max_length=False,truncation=True, return_tensors="pt")
 
         input_ids, attention_mask = encoding["input_ids"], encoding["attention_mask"]
@@ -28,7 +38,7 @@ def get_question(mdl,tknizer,sentence,answers=["[MASK]"],num_of_q=1):
         outs = mdl.generate(input_ids=input_ids,
                                     attention_mask=attention_mask,
                                     early_stopping=True,
-                                    num_beams=5,
+                                    num_beams=10,
                                     num_return_sequences=num_of_q,
                                     no_repeat_ngram_size=2,
                                     max_length=72)
@@ -37,8 +47,7 @@ def get_question(mdl,tknizer,sentence,answers=["[MASK]"],num_of_q=1):
         ques = []
         for dec in decs:
             # ques.append('question: {} answer: {}'.format(dec,answer))
-            Question = dec.replace("question:","")
-            Question = Question.strip()
+            Question, answer = from_string(dec)
             ques.append({'question': Question , 'ans1': answer})
         questions = questions + ques
     return questions
