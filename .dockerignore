@@ -1,0 +1,11 @@
+models/qag_t5_tokenizer
+models/qag_t5_trained_model
+models/qag_t5_tokenizer_v2
+models/qag_t5_model_v2
+models/qag_t5_tokenizer_v6
+models/qag_t5_model_v6
+models/t5_tokenizer_vn
+models/t5_trained_model_vn
+app
+venv
+README.md

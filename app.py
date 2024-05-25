@@ -3,8 +3,7 @@ from flask import request, jsonify
 from transformers import (
     AdamW,
     T5ForConditionalGeneration,
-    T5Tokenizer,
-    get_linear_schedule_with_warmup
+    T5Tokenizer
 )
 import json
 app = flask.Flask(__name__)
@@ -14,7 +13,7 @@ trained_tokenizer = 'models/qag_t5_tokenizer_v7'
 
 model = T5ForConditionalGeneration.from_pretrained(trained_model_path)
 tokenizer = T5Tokenizer.from_pretrained(trained_tokenizer)
-# print(model)
+
 
 def from_string(formatted_string):
   parts = formatted_string.split("answer:")
@@ -38,7 +37,7 @@ def get_question(mdl,tknizer,sentence,answers=["[MASK]"],num_of_q=1):
         outs = mdl.generate(input_ids=input_ids,
                                     attention_mask=attention_mask,
                                     early_stopping=True,
-                                    num_beams=10,
+                                    num_beams=5,
                                     num_return_sequences=num_of_q,
                                     no_repeat_ngram_size=2,
                                     max_length=72)
