@@ -101,7 +101,7 @@ def get_question(mdl,tknizer,sentence,answers=["[MASK]"],num_of_q=1):
             try:
                 distractions = tokens._.s2v_most_similar(5)
                 distractions = [distract[0][0] for distract in distractions]
-            except ValueError as e:
+            except:
                 distractions = ["","","","",""]
             distractions += [''] * (5 - len(distractions))
             ques.append({'question': Question , 'ans1': answer, 'ans2': distractions[0], 'ans3': distractions[1], 'ans4': distractions[2], 'ans5': distractions[3], "ans6": distractions[4]})
