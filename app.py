@@ -12,7 +12,7 @@ from sense2vec import Sense2Vec
 nlp = spacy.load("en_core_web_md")
 s2v = nlp.add_pipe("sense2vec")
 s2v.from_disk("s2v_old") 
-# s2v = Sense2Vec().from_disk("s2v_old")
+s2v1 = Sense2Vec().from_disk("s2v_old")
 
 
 app = flask.Flask(__name__)
@@ -68,7 +68,7 @@ def get_question(mdl,tknizer,sentence,answers=["[MASK]"],num_of_q=1):
     # Process the sentence with spaCy
     doc = nlp(sentence)
     for answer in answers:
-        text = "context: {} answer: {}".format(sentence,answer)
+        text = "context: {} answer: {}".format(sentence,answer[0])
         # print (text)
         max_len = 512
         encoding = tknizer.encode_plus(text,max_length=max_len, pad_to_max_length=False,truncation=True, return_tensors="pt")
@@ -86,27 +86,38 @@ def get_question(mdl,tknizer,sentence,answers=["[MASK]"],num_of_q=1):
         decs = [tknizer.decode(ids,skip_special_tokens=True) for ids in outs]
         ques = []
         for index,dec in enumerate(decs):
-            Question, answer = from_string(dec)
-            print("Answer: ", answer)
-            if answers[0][0] == "[MASK]":
-                start = sentence.find(answer)
-                end = start + len(answer)
-            else:
-                # print(answers[index],"DSK")
-                start = int(answers[index][1])
-                end = int(answers[index][2])
-            # print("Start: ", start, "End: ", end)
-            tokens = extract_token_by_indices(doc, start, end)
-            distractions = ["","","","",""]
-            try:
-                distractions = tokens._.s2v_most_similar(5)
-                distractions = [distract[0][0] for distract in distractions]
-            except:
-                distractions = ["","","","",""]
-            distractions += [''] * (5 - len(distractions))
-            ques.append({'question': Question , 'ans1': answer, 'ans2': distractions[0], 'ans3': distractions[1], 'ans4': distractions[2], 'ans5': distractions[3], "ans6": distractions[4]})
+            Question, ans = from_string(dec)
+            # print("Answer: ", answer,"\n",dec)
+            ques.append([Question , ans, answer[1], answer[2]])
+            # ques.append({'question': Question , 'ans1': answer, 'ans2': distractions[0], 'ans3': distractions[1], 'ans4': distractions[2], 'ans5': distractions[3], "ans6": distractions[4]})
         questions = questions + ques
-    return questions
+        #one answer only
+    print(questions)
+    res = []
+    for index,q in enumerate(questions):
+        if answers[0][0] == "[MASK]":
+            start = sentence.find(q[1])
+            end = start + len(q[1])
+        else:
+            start = int(q[2])
+            end = int(q[3])
+        print("Start: ", start, "End: ", end)
+        tokens = extract_token_by_indices(doc, start, end)
+        distractions = ["","","","",""]
+        try:
+            distractions = tokens._.s2v_most_similar(5)
+            if distractions == None:
+                distractions = ["","","","",""]
+            distractions = [distract[0][0] for distract in distractions]
+        except Exception as e:
+            print(e)
+            # distractions = sense2vec_get_words(q[1],s2v1)
+            # if distractions == None:
+            distractions = ["","","","",""]
+        distractions += [''] * (5 - len(distractions))
+        res.append({'question': q[0] , 'ans1': q[1], 'ans2': distractions[0], 'ans3': distractions[1], 'ans4': distractions[2], 'ans5': distractions[3], "ans6": distractions[4]})
+    # questions = res
+    return res
 
 # def get_question(mdl,tknizer,sentence,answers=["[MASK]"],num_of_q=1):
 #     questions = []
